@@ -1,51 +1,73 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# call me maybe — Makefile
-# ─────────────────────────────────────────────────────────────────────────────
+GOINFRE_DIR = /home/$(USER)/goinfre/call_me_brouane
 
+UV_CACHE    = $(GOINFRE_DIR)/uv-cache
+HF_CACHE    = $(GOINFRE_DIR)/huggingface
 
-## install: Install project dependencies using uv
+EXPORT_UV_CACHE = export UV_CACHE_DIR="$(GOINFRE_DIR)/uv-cache"
+EXPORT_HF_HOME  = export HF_HOME="$(GOINFRE_DIR)/huggingface"
+EXPORT_VENV     = export UV_PROJECT_ENVIRONMENT="$(GOINFRE_DIR)/.venv"
+
 install:
 	uv sync
 
 setup_goinfre:
-	mkdir -p /home/$(USER)/goinfre/call_me_brouane/uv-cache
-	mkdir -p /home/$(USER)/goinfre/call_me_brouane/huggingface
-	grep -qxF 'export UV_CACHE_DIR="/home/$$USER/goinfre/call_me_brouane/uv-cache"' ~/.zshrc || echo 'export UV_CACHE_DIR="/home/$$USER/goinfre/call_me_brouane/uv-cache"' >> ~/.zshrc
-	grep -qxF 'export HF_HOME="/home/$$USER/goinfre/call_me_brouane/huggingface"' ~/.zshrc || echo 'export HF_HOME="/home/$$USER/goinfre/call_me_brouane/huggingface"' >> ~/.zshrc
-	grep -qxF 'export UV_PROJECT_ENVIRONMENT="/home/$$USER/goinfre/call_me_brouane/.venv"' ~/.zshrc || echo 'export UV_PROJECT_ENVIRONMENT="/home/$$USER/goinfre/call_me_brouane/.venv"' >> ~/.zshrc
-	@echo ""
-	@echo "Run the following commands:"
-	@echo "  zsh"
-	@echo "  source ~/.zshrc"
-	@echo "  fish"
+	mkdir -p $(UV_CACHE)
+	mkdir -p $(HF_CACHE)
 
-## run: Execute the main script
+	@echo "echo '$(EXPORT_UV_CACHE)' >> ~/.zshrc"
+	@grep -qxF '$(EXPORT_UV_CACHE)' ~/.zshrc || echo '$(EXPORT_UV_CACHE)' >> ~/.zshrc
+
+	@echo "echo '$(EXPORT_HF_HOME)' >> ~/.zshrc"
+	@grep -qxF '$(EXPORT_HF_HOME)' ~/.zshrc || echo '$(EXPORT_HF_HOME)' >> ~/.zshrc
+
+	@echo "echo '$(EXPORT_VENV)' >> ~/.zshrc"
+	@grep -qxF '$(EXPORT_VENV)' ~/.zshrc || echo '$(EXPORT_VENV)' >> ~/.zshrc
+
+	@echo ""
+	@echo "If your current shell is listed below, follow the corresponding steps:"
+	@echo "┌─────────┬──────────────────────────────────────────────┐"
+	@echo "│ Shell   │ Commands                                     │"
+	@echo "├─────────┼──────────────────────────────────────────────┤"
+	@echo "│ zsh     │ ✔ Nothing to do                              │"
+	@echo "├─────────┼──────────────────────────────────────────────┤"
+	@echo "│ fish    │ zsh                                          │"
+	@echo "│         │ source ~/.zshrc                              │"
+	@echo "│         │ fish                                         │"
+	@echo "├─────────┼──────────────────────────────────────────────┤"
+	@echo "│ bash    │ zsh                                          │"
+	@echo "│         │ source ~/.zshrc                              │"
+	@echo "│         │ bash                                         │"
+	@echo "└─────────┴──────────────────────────────────────────────┘"
+	@echo ""
+
 run:
 	uv run python -m src
 
-## debug: Run the main script under Python's built-in debugger (pdb)
 debug:
 	uv run python -m pdb -m src
 
-## clean: Remove caches and temporary files
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	rm -rf .mypy_cache
-	rm -rf src/.mypy_cache
-	rm -rf llm_sdk/.mypy_cache
-	rm -rf .ruff_cache
+	rm -rf \
+	.mypy_cache \
+	src/.mypy_cache \
+	llm_sdk/.mypy_cache \
+	.ruff_cache
 
-fclean:
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	rm -rf .mypy_cache
-	rm -rf src/.mypy_cache
-	rm -rf llm_sdk/.mypy_cache
-	rm -rf .ruff_cache
-	rm -rf /home/$(USER)/goinfre/call_me_brouane
+fclean: clean
+	rm -rf $(GOINFRE_DIR)
 
-re: fclean install
+fclean_mistake: clean
+	@echo "Removing files created without setup_goinfre..."
+	rm -rf \
+	.venv \
+	~/.cache/uv \
+	~/.cache/huggingface \
+	~/.cache/transformers \
+	~/.cache/torch
 
-## lint: Run flake8 and mypy with standard flags
+re: fclean fclean_mistake install
+
 lint:
 	flake8 src/
 	mypy src/ \
@@ -55,9 +77,18 @@ lint:
 		--disallow-untyped-defs \
 		--check-untyped-defs
 
-## lint-strict: Run flake8 and mypy with strict flags (optional)
 lint-strict:
 	flake8 src/
 	mypy src/ --strict
 
-.PHONY: install run debug clean lint lint-strict fclean setup_goinfre re
+.PHONY: \
+	install \
+	setup_goinfre \
+	run \
+	debug \
+	clean \
+	fclean \
+	fclean_mistake \
+	re \
+	lint \
+	lint-strict

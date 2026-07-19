@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from typing import Any
 from pydantic import BaseModel, Field, model_validator
@@ -32,12 +33,20 @@ class FunctionDefinition(BaseModel):
     def check_non_empty(self) -> "FunctionDefinition":
         if not self.name.strip():
             raise ValueError("Function name must not be blank.")
+        if not self.description.strip():
+            raise ValueError("Function description must not be blank.")
         return self
 
 
 class PromptEntry(BaseModel):
 
     prompt: str = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def check_non_empty(self) -> "PromptEntry":
+        if not self.prompt.strip():
+            raise ValueError("Prompt must not be blank.")
+        return self
 
 
 class LoadedData(BaseModel):
@@ -49,7 +58,9 @@ class LoadedData(BaseModel):
 def load_and_validate(
     func_file: str,
     prompt_file: str,
+    output_path: str,
 ) -> LoadedData:
+
     func_path = Path(func_file)
     prt_path = Path(prompt_file)
 
@@ -59,7 +70,7 @@ def load_and_validate(
     with open(func_path, "r") as my_json:
         raw_funcs: Any = json.load(my_json)
 
-    if not isinstance(raw_funcs, list) or not raw_funcs:
+    if not raw_funcs or not isinstance(raw_funcs, list):
         raise ValueError(
             f"{func_file}: expected a non-empty JSON array of function definitions."
         )
@@ -81,7 +92,7 @@ def load_and_validate(
     with open(prt_path, "r") as my_json:
         raw_prompts: Any = json.load(my_json)
 
-    if not isinstance(raw_prompts, list) or not raw_prompts:
+    if not raw_prompts or not isinstance(raw_prompts, list):
         raise ValueError(
             f"{prompt_file}: expected a non-empty JSON array of prompt objects."
         )
@@ -100,4 +111,13 @@ def load_and_validate(
             )
         validated_prompts.append(pe.prompt)
 
+    out_dir = os.path.dirname(os.path.abspath(output_path))
+    os.makedirs(out_dir, exist_ok=True)
+
     return LoadedData(functions=validated_funcs, prompts=validated_prompts)
+
+
+def write_results(results: list[dict[str, Any]], output_path: str) -> None:
+
+    with open(output_path, "w") as my_json:
+        json.dump(results, my_json, indent=2)
