@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, PrivateAttr, field_validator
 
 _NUM_CHARS: frozenset[str] = frozenset("0123456789.+-eE")
 _TERMINATORS: frozenset[str] = frozenset({",", "}"})
-_MAX_TOKENS: int = 128  # safety cap for any single generation loop
+_MAX_TOKENS: int = 128
 
 class FunctionCallGenerator(BaseModel):
 
@@ -20,8 +20,8 @@ class FunctionCallGenerator(BaseModel):
     _id_to_decoded: dict[int, str] = PrivateAttr(default_factory=dict)
     _numeric_ids: list[int] = PrivateAttr(default_factory=list)
     _terminator_ids: list[int] = PrivateAttr(default_factory=list)
-    _input_ids: list[int] = PrivateAttr(default_factory=list) #done
-    _selected_fn: Optional[dict[str, Any]] = PrivateAttr(default=None) #done
+    _input_ids: list[int] = PrivateAttr(default_factory=list)
+    _selected_fn: Optional[dict[str, Any]] = PrivateAttr(default=None)
 
     @field_validator("functions")
     @classmethod
@@ -213,24 +213,15 @@ class FunctionCallGenerator(BaseModel):
             self._input_ids.append(chosen_id)
             value_parts.append(tok_decoded)
 
-        # Safety fallback: close the string without crashing
+
         self._force('"')
         return "".join(value_parts)
 
-    # -----------------------------------------------------------------------
-    # Boolean generation
-    # -----------------------------------------------------------------------
+
+
+
 
     def _generate_boolean(self) -> bool:
-        """Generate a JSON boolean value (``true`` or ``false``).
-
-        The logit scores for the first token of ``"true"`` and ``"false"`` are
-        compared.  The option with the higher score has its full token sequence
-        forced into the model context.
-
-        Returns:
-            ``True`` or ``False`` according to the model's preference.
-        """
         true_ids: list[int] = self._encode("true")
         false_ids: list[int] = self._encode("false")
 
@@ -253,27 +244,14 @@ class FunctionCallGenerator(BaseModel):
             self._force("false")
             return False
 
-    # -----------------------------------------------------------------------
-    # Public entry point
-    # -----------------------------------------------------------------------
+
+
+
 
     def generate(self) -> dict[str, Any]:
-        """Run the full constrained generation pipeline for one prompt.
-
-        Builds an instruction context, then forces the JSON skeleton while
-        using constrained decoding for all dynamic values.  The result is a
-        Python dict that can be directly serialised to the output JSON.
-
-        Returns:
-            A dict with keys ``"prompt"``, ``"name"``, and ``"parameters"``.
-
-        Raises:
-            RuntimeError: If generation fails at any stage (e.g. name not
-                found, number generation stuck).
-        """
         if not self._token_to_id:
             self.initialize()
-        # Build instruction context so the model understands the task
+
         fn_descriptions: str = "\n".join(
             f"- {fn['name']}: {fn.get('description', '')}"
             for fn in self.functions
@@ -286,25 +264,25 @@ class FunctionCallGenerator(BaseModel):
             "Output JSON:"
         )
 
-        self._input_ids = self._encode(instruction) 
+        self._input_ids = self._encode(instruction)
         self._selected_fn = None
 
-        # ── Force opening structure + prompt value ──────────────────────────
+
         self._force('{"prompt":"')
 
-        # Append prompt tokens to model context; use raw prompt in JSON output
+
         self._input_ids.extend(self._encode(self.prompt))
 
-        # ── Force name key prefix ────────────────────────────────────────────
+
         self._force('","name":"')
 
-        # ── Constrained name selection ───────────────────────────────────────
+
         self._generate_name()
 
         if self._selected_fn is None:
             raise ValueError("No function was selected during name generation.")
 
-        # ── Force parameters prefix ──────────────────────────────────────────
+
         self._force('","parameters":{')
 
         params: dict[str, Any] = self._selected_fn.get("parameters", {})
@@ -315,7 +293,7 @@ class FunctionCallGenerator(BaseModel):
 
             is_last: bool = i == len(params) - 1
 
-            # Force parameter key
+
             self._input_ids.extend(self._encode(f'"{pname}":'))
 
             if ptype in ("number", "float"):
@@ -327,7 +305,7 @@ class FunctionCallGenerator(BaseModel):
             elif ptype == "boolean":
                 val = self._generate_boolean()
                 parameters[pname] = val
-            else:  # string (default)
+            else:
                 val = self._generate_string()
                 parameters[pname] = val
 
@@ -335,7 +313,7 @@ class FunctionCallGenerator(BaseModel):
                 self._force(",")
 
 
-        # ── Force closing braces ─────────────────────────────────────────────
+
         self._force("}}")
 
 

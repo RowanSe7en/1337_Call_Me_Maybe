@@ -1,9 +1,3 @@
-"""Terminal display helpers using the Rich library.
-
-Provides a logo, per-result output panel, error panel, and a summary table.
-All public functions are side-effect only (print to stdout).
-"""
-
 import json
 from typing import Any
 
@@ -31,18 +25,10 @@ _LOGO: str = ("\n[bold green]  ██████╗ █████╗ ██�
 
 
 def print_logo() -> None:
-    """Print the project ASCII-art logo to stdout."""
     rprint(_LOGO)
 
 
 def print_result(result: dict[str, Any], elapsed: float, total: float) -> None:
-    """Render a successful function-call result as a Rich side-by-side panel.
-
-    Args:
-        result: Dict with keys ``"prompt"``, ``"name"``, ``"parameters"``.
-        elapsed: Time taken for this single prompt (seconds).
-        total: Cumulative time so far (seconds).
-    """
     left_text = (
         f"[bold cyan]prompt: [/bold cyan]{result['prompt']}\n"
     )
@@ -69,14 +55,7 @@ def print_result(result: dict[str, Any], elapsed: float, total: float) -> None:
     rprint(Rule(style="dim"))
 
 
-
 def print_error(prompt: str, reason: str) -> None:
-    """Render a generation failure as a red error panel.
-
-    Args:
-        prompt: The original user prompt that failed.
-        reason: Human-readable explanation of the failure.
-    """
     rprint(
         Panel(
             f"[bold]Prompt:[/bold] {prompt}\n"
@@ -89,13 +68,6 @@ def print_error(prompt: str, reason: str) -> None:
 
 
 def print_summary(total_prompts: int, successes: int, total_time: float) -> None:
-    """Print a summary table after all prompts have been processed.
-
-    Args:
-        total_prompts: Total number of prompts attempted.
-        successes: Number of prompts that produced a valid result.
-        total_time: Wall-clock time for the entire run (seconds).
-    """
     table = Table(title="Run Summary", border_style="green")
     table.add_column("Metric", style="cyan", no_wrap=True)
     table.add_column("Value", style="bold white")
