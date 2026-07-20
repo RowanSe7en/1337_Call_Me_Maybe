@@ -1,3 +1,5 @@
+"""Entry point for the function-calling application."""
+
 import argparse
 import sys
 import time
@@ -9,26 +11,33 @@ from .display import print_error, print_logo, print_result, print_summary
 from .generator import FunctionCallGenerator
 from .io_handler import load_and_validate, write_results
 
-parsed = argparse.ArgumentParser()
 
-parsed.add_argument(
+PARSER: argparse.ArgumentParser = argparse.ArgumentParser()
+
+PARSER.add_argument(
     "--functions_definition",
-    default="data/input/functions_definition.json"
+    default="data/input/functions_definition.json",
 )
 
-parsed.add_argument(
+PARSER.add_argument(
     "--input",
-    default="data/input/function_calling_tests.json"
+    default="data/input/function_calling_tests.json",
 )
 
-parsed.add_argument(
+PARSER.add_argument(
     "--output",
-    default="data/output/function_calling_results.json"
+    default="data/output/function_calling_results.json",
 )
+
 
 def main() -> None:
+    """Run the function-calling application.
 
-    args = parsed.parse_args()
+    Loads the input data, initializes the language model, generates
+    constrained function calls for each prompt, writes the results,
+    and prints a summary of the execution.
+    """
+    args = PARSER.parse_args()
 
     try:
         data = load_and_validate(
@@ -41,6 +50,7 @@ def main() -> None:
         sys.exit(1)
 
     print("Loading model — this may take a moment on first run …")
+
     try:
         model: Small_LLM_Model = Small_LLM_Model()
     except Exception as exc:
@@ -70,6 +80,7 @@ def main() -> None:
         except KeyboardInterrupt:
             print("\n[Interrupted] Saving partial results …")
             break
+
         except Exception as exc:
             elapsed = time.perf_counter() - t_start
             total_time += elapsed
@@ -88,4 +99,5 @@ def main() -> None:
     )
 
 
-main()
+if __name__ == "__main__":
+    main()

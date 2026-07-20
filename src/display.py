@@ -1,14 +1,17 @@
+"""Terminal display helpers built with the Rich library."""
+
 import json
 from typing import Any
 
 from rich import print as rprint
 from rich.columns import Columns
 from rich.panel import Panel
-from rich.table import Table
 from rich.rule import Rule
+from rich.table import Table
 
 
-_LOGO: str = ("\n[bold green]  ██████╗ █████╗ ██╗     ██╗        ███╗   ███╗███████╗"
+_LOGO: str = (
+    "\n[bold green]  ██████╗ █████╗ ██╗     ██╗        ███╗   ███╗███████╗"
     "   ███╗   ███╗ █████╗ ██╗   ██╗██████╗ ███████╗\n"
     " ██╔════╝██╔══██╗██║     ██║        ████╗ ████║██╔════╝"
     "   ████╗ ████║██╔══██╗╚██╗ ██╔╝██╔══██╗██╔════╝\n"
@@ -25,13 +28,19 @@ _LOGO: str = ("\n[bold green]  ██████╗ █████╗ ██�
 
 
 def print_logo() -> None:
+    """Print the project logo."""
     rprint(_LOGO)
 
 
 def print_result(result: dict[str, Any], elapsed: float, total: float) -> None:
-    left_text = (
-        f"[bold cyan]prompt: [/bold cyan]{result['prompt']}\n"
-    )
+    """Display a successful function-call result.
+
+    Args:
+        result: Generated function-call result.
+        elapsed: Time taken for the current prompt in seconds.
+        total: Total elapsed time in seconds.
+    """
+    left_text = f"[bold cyan]prompt: [/bold cyan]{result['prompt']}\n"
     right_text = json.dumps(result, indent=2)
 
     rprint(
@@ -56,6 +65,12 @@ def print_result(result: dict[str, Any], elapsed: float, total: float) -> None:
 
 
 def print_error(prompt: str, reason: str) -> None:
+    """Display a generation error.
+
+    Args:
+        prompt: Prompt that failed.
+        reason: Error message explaining the failure.
+    """
     rprint(
         Panel(
             f"[bold]Prompt:[/bold] {prompt}\n"
@@ -67,7 +82,18 @@ def print_error(prompt: str, reason: str) -> None:
     )
 
 
-def print_summary(total_prompts: int, successes: int, total_time: float) -> None:
+def print_summary(
+    total_prompts: int,
+    successes: int,
+    total_time: float,
+) -> None:
+    """Display a summary table for the run.
+
+    Args:
+        total_prompts: Total number of processed prompts.
+        successes: Number of successful generations.
+        total_time: Total execution time in seconds.
+    """
     table = Table(title="Run Summary", border_style="green")
     table.add_column("Metric", style="cyan", no_wrap=True)
     table.add_column("Value", style="bold white")

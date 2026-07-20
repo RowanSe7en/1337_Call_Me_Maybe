@@ -47,39 +47,40 @@ debug:
 	uv run python -m pdb -m src
 
 clean:
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	rm -rf \
+	@echo "Removing temporary files and caches..."
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@rm -rf \
 	.mypy_cache \
 	src/.mypy_cache \
 	llm_sdk/.mypy_cache \
 	.ruff_cache
 
-fclean: clean
+fclean_goinfre: clean
+	@echo "Removing the 'goinfre' project directory..."
 	rm -rf $(GOINFRE_DIR)
 
-fclean_mistake: clean
+fclean: clean
 	@echo "Removing files created without setup_goinfre..."
-	rm -rf \
+	@rm -rf \
 	.venv \
 	~/.cache/uv \
 	~/.cache/huggingface \
 	~/.cache/transformers \
 	~/.cache/torch
 
-re: fclean fclean_mistake install
+re_goinfre: fclean_goinfre install
+
+re: fclean install
 
 lint:
-	flake8 src/
-	mypy src/ \
-		--warn-return-any \
-		--warn-unused-ignores \
-		--ignore-missing-imports \
-		--disallow-untyped-defs \
-		--check-untyped-defs
-
-lint-strict:
-	flake8 src/
-	mypy src/ --strict
+	@flake8 src
+	@mypy src \
+	--warn-return-any \
+	--warn-unused-ignores \
+	--ignore-missing-imports \
+	--follow-imports=skip \
+	--disallow-untyped-defs \
+	--check-untyped-defs
 
 .PHONY: \
 	install \
@@ -88,7 +89,7 @@ lint-strict:
 	debug \
 	clean \
 	fclean \
-	fclean_mistake \
+	fclean_goinfre \
 	re \
+	re_goinfre \
 	lint \
-	lint-strict

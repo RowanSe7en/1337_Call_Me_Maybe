@@ -117,22 +117,20 @@ uv run python -m src \
   --input data/input/function_calling_tests.json \
   --output data/output/function_calling_results.json
 ```
-
 ### Makefile Targets
 
-| Target                | Description                                                                                                               |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `make setup_goinfre`  | Configure the `uv` cache, Hugging Face cache, and virtual environment to use `goinfre` (recommended on 1337/42 machines). |
-| `make install`        | Install the project dependencies using `uv sync`.                                                                         |
-| `make run`            | Run the project.                                                                                                          |
-| `make debug`          | Run the project under the Python debugger (`pdb`).                                                                        |
-| `make lint`           | Run `flake8` and `mypy` with the project's standard checks.                                                               |
-| `make lint-strict`    | Run `flake8` and `mypy --strict`.                                                                                         |
-| `make clean`          | Remove Python bytecode (`__pycache__`) and lint caches.                                                                   |
-| `make fclean`         | Run `make clean` and remove the `goinfre` project directory.                                                              |
-| `make fclean_mistake` | Remove the local virtual environment and caches created when `make setup_goinfre` was not used before installation.       |
-| `make re`             | Reinstall the project by running `make fclean`, `make fclean_mistake`, and `make install`.                                |
-
+| Target | Description |
+|--------|-------------|
+| <code>make&nbsp;setup_goinfre</code> | Configure the `uv` cache, Hugging Face cache, and virtual environment to use `goinfre` (recommended on 1337/42 machines). |
+| <code>make&nbsp;install</code> | Install the project dependencies using `uv sync`. |
+| <code>make&nbsp;run</code> | Run the project. |
+| <code>make&nbsp;debug</code> | Run the project under the Python debugger (`pdb`). |
+| <code>make&nbsp;lint</code> | Run `flake8` and `mypy` with the project's linting checks. |
+| <code>make&nbsp;clean</code> | Remove Python bytecode (`__pycache__`) and mypy/Ruff caches. |
+| <code>make&nbsp;fclean_goinfre</code> | Run `make clean` and remove the entire `goinfre` project directory. |
+| <code>make&nbsp;fclean</code> | Run `make clean` and remove local virtual environments and caches created when `setup_goinfre` was not used. |
+| <code>make&nbsp;re_goinfre</code> | Recreate the `goinfre` environment by running `make fclean_goinfre` followed by `make install`. |
+| <code>make&nbsp;re</code> | Reinstall the project by running `make fclean` followed by `make install`. |
 
 ## How it works, step by step
 

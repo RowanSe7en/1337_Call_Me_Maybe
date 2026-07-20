@@ -1,15 +1,19 @@
+"""Constrained function-call generation using a language model."""
+
 import json
 import math
 from typing import Any, Optional
 
 import numpy as np
-from pydantic import BaseModel, Field, PrivateAttr, field_validator
+from pydantic import BaseModel, PrivateAttr, field_validator
 
 _NUM_CHARS: frozenset[str] = frozenset("0123456789.+-eE")
 _TERMINATORS: frozenset[str] = frozenset({",", "}"})
 _MAX_TOKENS: int = 128
 
+
 class FunctionCallGenerator(BaseModel):
+    """Generate structured function calls using constrained decoding."""
 
     model: Any
     functions: list[dict[str, Any]]
@@ -25,13 +29,18 @@ class FunctionCallGenerator(BaseModel):
 
     @field_validator("functions")
     @classmethod
-    def functions_not_empty(cls, v: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def functions_not_empty(
+        cls,
+        v: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Validate that the functions list is not empty."""
 
         if not v:
             raise ValueError("'functions' must contain at least one entry.")
         return v
 
     def initialize(self) -> None:
+        """Load vocabulary data and prepare token lookup tables."""
 
         try:
             with open(self.model.get_path_to_vocab_file(), "r") as fh:
@@ -58,25 +67,33 @@ class FunctionCallGenerator(BaseModel):
         ]
 
     def _encode(self, text: str) -> list[int]:
+        """Encode text into a list of token IDs."""
 
         result: list[int] = self.model.encode(text).tolist()[0]
         return result
 
     def _get_logits(self) -> list[float]:
+        """Get the model logits for the current input tokens."""
 
-        result: list[float] = self.model.get_logits_from_input_ids(self._input_ids)
+        result: list[float] = (
+            self.model.get_logits_from_input_ids(self._input_ids)
+        )
         return result
 
     def _force(self, text: str) -> None:
+        """Append encoded text tokens to the current input."""
 
         self._input_ids.extend(self._encode(text))
 
     def _sample_constrained(
         self, allowed_ids: list[int]
     ) -> tuple[int, str]:
+        """Select the highest-scoring token from allowed token IDs."""
 
         if not allowed_ids:
-            raise RuntimeError("Constrained sampling received an empty allowed set.")
+            raise RuntimeError(
+                "Constrained sampling received an empty allowed set."
+                )
 
         logits = self._get_logits()
         masked: list[float] = [-math.inf] * len(logits)
@@ -89,13 +106,16 @@ class FunctionCallGenerator(BaseModel):
         return chosen_id, self._id_to_decoded.get(chosen_id, "")
 
     def _generate_name(self) -> None:
+        """Generate and resolve a function name using constrained decoding."""
 
         active: dict[str, list[int]] = {
             fn["name"]: self._encode(fn["name"]) for fn in self.functions
         }
         pos: int = 0
         while True:
-            completed = [name for name, seq in active.items() if pos == len(seq)]
+            completed = [
+                name for name, seq in active.items() if pos == len(seq)
+            ]
             longer_exist = any(len(seq) > pos for seq in active.values())
 
             if completed and not longer_exist:
@@ -130,16 +150,20 @@ class FunctionCallGenerator(BaseModel):
 
             if not active:
                 raise RuntimeError(
-                    "No function name could be resolved — active set exhausted."
+                    "No function name could be resolved"
                 )
 
     def _resolve(self, name: str) -> None:
+        """Select the function matching the generated name."""
+
         for f in self.functions:
             if f["name"] == name:
                 self._selected_fn = f
                 break
 
     def _generate_number(self, as_float: bool) -> float:
+        """Generate a constrained numeric value from model tokens."""
+
         number_parts: list[str] = []
         has_digit: bool = False
         for _ in range(_MAX_TOKENS):
@@ -182,12 +206,18 @@ class FunctionCallGenerator(BaseModel):
 
         number_str = "".join(number_parts) or "0"
 
-        if as_float and "." not in number_str and "e" not in number_str.lower():
+        if (
+            as_float
+            and "." not in number_str
+            and "e" not in number_str.lower()
+        ):
             number_str += ".0"
 
         return float(number_str)
 
     def _generate_string(self) -> str:
+        """Generate a string value using constrained token decoding."""
+
         self._force('"')
 
         value_parts: list[str] = []
@@ -213,15 +243,14 @@ class FunctionCallGenerator(BaseModel):
             self._input_ids.append(chosen_id)
             value_parts.append(tok_decoded)
 
-
         self._force('"')
+
         return "".join(value_parts)
 
-
-
-
-
     def _generate_boolean(self) -> bool:
+        """Generate a boolean value by comparing
+        true and false token scores."""
+
         true_ids: list[int] = self._encode("true")
         false_ids: list[int] = self._encode("false")
 
@@ -244,11 +273,10 @@ class FunctionCallGenerator(BaseModel):
             self._force("false")
             return False
 
-
-
-
-
     def generate(self) -> dict[str, Any]:
+        """Generate a function call with
+        extracted parameters from the prompt."""
+
         if not self._token_to_id:
             self.initialize()
 
@@ -267,21 +295,18 @@ class FunctionCallGenerator(BaseModel):
         self._input_ids = self._encode(instruction)
         self._selected_fn = None
 
-
         self._force('{"prompt":"')
-
 
         self._input_ids.extend(self._encode(self.prompt))
 
-
         self._force('","name":"')
-
 
         self._generate_name()
 
         if self._selected_fn is None:
-            raise ValueError("No function was selected during name generation.")
-
+            raise ValueError(
+                "No function was selected during name generation."
+            )
 
         self._force('","parameters":{')
 
@@ -292,7 +317,6 @@ class FunctionCallGenerator(BaseModel):
             ptype: str = pschema.get("type", "string")
 
             is_last: bool = i == len(params) - 1
-
 
             self._input_ids.extend(self._encode(f'"{pname}":'))
 
@@ -312,10 +336,7 @@ class FunctionCallGenerator(BaseModel):
             if not is_last:
                 self._force(",")
 
-
-
         self._force("}}")
-
 
         return {
             "prompt": self.prompt,
