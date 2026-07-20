@@ -1,5 +1,33 @@
 *This project has been created as part of the 42 curriculum by brouane.*
 
+<div align="center">
+
+```
+ ██████╗ █████╗ ██╗     ██╗         ███╗   ███╗███████╗
+██╔════╝██╔══██╗██║     ██║         ████╗ ████║██╔════╝
+██║     ███████║██║     ██║         ██╔████╔██║█████╗  
+██║     ██╔══██║██║     ██║         ██║╚██╔╝██║██╔══╝  
+╚██████╗██║  ██║███████╗███████╗    ██║ ╚═╝ ██║███████╗
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝    ╚═╝     ╚═╝╚══════╝
+
+███╗   ███╗ █████╗ ██╗   ██╗██████╗ ███████╗
+████╗ ████║██╔══██╗╚██╗ ██╔╝██╔══██╗██╔════╝
+██╔████╔██║███████║ ╚████╔╝ ██████╔╝█████╗  
+██║╚██╔╝██║██╔══██║  ╚██╔╝  ██╔══██╗██╔══╝  
+██║ ╚═╝ ██║██║  ██║   ██║   ██████╔╝███████╗
+╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═════╝ ╚══════╝
+```
+
+[![Language](https://img.shields.io/badge/Language-Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![42 School](https://img.shields.io/badge/42-brouane-000000?style=for-the-badge&logo=42&logoColor=white)](https://42.fr/)
+[![Model](https://img.shields.io/badge/Model-Qwen3--0.6B-8A2BE2?style=for-the-badge)](.)
+[![Decoding](https://img.shields.io/badge/Decoding-Constrained-orange?style=for-the-badge)](.)
+[![JSON](https://img.shields.io/badge/Output-100%25%20Valid%20JSON-success?style=for-the-badge)](.)
+
+*Teaching a 500M-parameter model to speak the language of computers.*
+
+</div>
+
 # call-me-maybe
 
 ## Description
