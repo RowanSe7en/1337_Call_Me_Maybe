@@ -100,6 +100,29 @@ uv run python -m src \
 | <code>make&nbsp;re_goinfre</code> | Recreate the `goinfre` environment by running `make fclean_goinfre` followed by `make install`. |
 | <code>make&nbsp;re</code> | Reinstall the project by running `make fclean` followed by `make install`. |
 
+## Folder structure
+
+```
+1337_Call_Me_Maybe/
+└────── Makefile
+    ├── README.md
+    ├── data/
+    │   └── input/
+    │       ├── function_calling_tests.json
+    │       └── functions_definition.json
+    ├── llm_sdk/
+    │   └── __init__.py
+    ├── pyproject.toml
+    ├── smollm2_backend/
+    │   └── __init__.py
+    ├── src/
+    │   ├── __main__.py
+    │   ├── display.py
+    │   ├── generator.py
+    │   └── io_handler.py
+    └── uv.lock
+```
+
 ## How it works, step by step
 
 ### 1. Parsing arguments
@@ -344,6 +367,40 @@ sample data (`data/input/functions_definition.json` and
 - Graceful handling of edge cases: missing input files, malformed JSON,
   empty prompt/function arrays, and prompts that don't map cleanly to any
   function.
+
+## Multi-model support
+
+Although the subject only requires `Qwen/Qwen3-0.6B`, the generation pipeline
+never talks to `transformers` directly — it only calls the four methods
+exposed by the `llm_sdk` interface (`encode`, `decode`,
+`get_logits_from_input_ids`, `get_path_to_vocab_file`). Because
+`FunctionCallGenerator` is written against that interface and not against a
+specific class, swapping the backing model is just a matter of providing
+another object with the same shape.
+
+`src/__main__.py` demonstrates this with a small `models` registry mapping a
+name to a zero-argument constructor:
+
+```python
+models: dict[str, Callable[[], Any]] = {
+    "Qwen": Small_LLM_Model,
+    "SmolLM2": SmolLM2Backend,
+}
+```
+
+`SmolLM2Backend` (in `smollm2_backend.py`) wraps `HuggingFaceTB/SmolLM2` behind
+the exact same four-method contract as `Small_LLM_Model`, so it can be
+instantiated and passed straight into `FunctionCallGenerator` with zero
+changes to `generator.py`, `_generate_name()`, `_generate_number()`, or any
+other constrained-decoding logic. Selecting a backend is currently a
+one-line change (`models["SmolLM2"]` instead of `models["Qwen"]`), but the
+registry is already shaped so it could just as easily be driven by a
+`--model` CLI flag.
+
+The only real requirement for adding a new backend is that its tokenizer's
+vocabulary is exposed the same way `get_path_to_vocab_file()` exposes Qwen's
+— everything downstream (numeric-token precomputation, trie-based name
+matching, JSON forcing) is model-agnostic and works unchanged.
 
 ## Example usage
 
