@@ -20,9 +20,10 @@
 
 [![Language](https://img.shields.io/badge/Language-Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![42 School](https://img.shields.io/badge/42-brouane-000000?style=for-the-badge&logo=42&logoColor=white)](https://42.fr/)
-[![Model](https://img.shields.io/badge/Model-Qwen3--0.6B-8A2BE2?style=for-the-badge)](.)
+[![Model](https://img.shields.io/badge/Models-Qwen3--0.6B%20%7C%20SmolLM2--1.7B-8A2BE2?style=for-the-badge)](.)
 [![Decoding](https://img.shields.io/badge/Decoding-Constrained-orange?style=for-the-badge)](.)
 [![JSON](https://img.shields.io/badge/Output-100%25%20Valid%20JSON-success?style=for-the-badge)](.)
+[![Status](https://img.shields.io/badge/Status-NA-success?style=for-the-badge)](.)
 
 *Teaching a 500M-parameter model to speak the language of computers.*
 
