@@ -1,15 +1,14 @@
 """Entry point for the function-calling application."""
 
-import argparse
 import sys
 import time
-from typing import Any
-
+import argparse
+from typing import Any, Callable
 from llm_sdk import Small_LLM_Model
-
-from .display import print_error, print_logo, print_result, print_summary
+from smollm2_backend import SmolLM2Backend
 from .generator import FunctionCallGenerator
 from .io_handler import load_and_validate, write_results
+from .display import print_error, print_logo, print_result, print_summary
 
 
 PARSER: argparse.ArgumentParser = argparse.ArgumentParser()
@@ -49,10 +48,17 @@ def main() -> None:
         print(f"[ERROR] {exc}", file=sys.stderr)
         sys.exit(1)
 
-    print("Loading model — this may take a moment on first run …")
-
     try:
-        model: Small_LLM_Model = Small_LLM_Model()
+
+        models: dict[str, Callable[[], Any]] = {
+            "Qwen": Small_LLM_Model,
+            "SmolLM2": SmolLM2Backend,
+        }
+
+        my_model: Callable[[], Any] = models["SmolLM2"]
+        print(f"Loading model {str(my_model.__name__)} — this may take a moment on first run …")
+        model: Any = my_model()
+
     except Exception as exc:
         print(f"[ERROR] Failed to load model: {exc}", file=sys.stderr)
         sys.exit(1)
