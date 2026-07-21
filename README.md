@@ -477,6 +477,32 @@ Output (`data/output/function_calling_results.json`):
 ]
 ```
 
+## Bonus Implementations
+
+The project includes several bonus features and improvements beyond the core requirements:
+
+* **Support for multiple LLM models**
+  The project supports multiple language model backends, including **Qwen** and **SmolLM2**, through a common model selection mechanism.
+
+* **Recoded tokenizer integration**
+  The main generation code avoids directly depending on the tokenizer's `encode` and `decode` methods. Instead, token IDs, vocabulary data, decoded token mappings, and logits are handled through the LLM SDK and internal token mappings.
+
+* **Advanced error recovery mechanisms**
+  The implementation includes error handling through `try/except` blocks, `RuntimeError` checks for stuck generation states, active-set exhaustion handling, and a safety fallback for string generation. These mechanisms provide robust failure detection and handling, although they focus more on error handling and failure prevention than on advanced retry or recovery strategies.
+
+
+* **Performance optimizations (caching, batching)**
+  The implementation includes caching optimizations through `_id_to_decoded`, which avoids repeatedly decoding the same tokens, and precomputes `_numeric_ids` and `_terminator_ids` to reduce repeated token filtering and lookup overhead during generation. Batching is not implemented.
+
+
+* **Visualization of the generation process**
+  The generation process is presented interactively in the terminal using the **Rich** library. Results are displayed prompt by prompt with structured panels showing the original prompt, selected function, generated parameters, JSON output, timing information, errors, and an overall execution summary.
+
+* **Encoding and constrained decoding demonstration**
+  The project demonstrates how text is converted into token IDs, how token IDs are used to obtain model logits, and how constrained decoding uses those logits to select only valid tokens before reconstructing the final function call.
+
+These additions make the project more modular, extensible, and easier to debug while demonstrating a deeper understanding of tokenization, model inference, and constrained decoding.
+
 ## Resources
 
 - [Hugging Face — Text generation strategies](https://huggingface.co/docs/transformers/generation_strategies)
