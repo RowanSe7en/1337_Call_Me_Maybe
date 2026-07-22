@@ -2,12 +2,11 @@
 
 import json
 from typing import Any
-
-from rich import print as rprint
-from rich.columns import Columns
-from rich.panel import Panel
 from rich.rule import Rule
+from rich.panel import Panel
 from rich.table import Table
+from rich.columns import Columns
+from rich import print as rprint
 
 
 _LOGO: str = (

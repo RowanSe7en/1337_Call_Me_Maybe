@@ -55,8 +55,11 @@ def main() -> None:
             "SmolLM2": SmolLM2Backend,
         }
 
-        my_model: Callable[[], Any] = models["SmolLM2"]
-        print(f"Loading model {str(my_model.__name__)} — this may take a moment on first run …")
+        my_model: Callable[[], Any] = models["SmQwenolLM2"]
+        print(
+            f"Loading model {str(my_model.__name__)} "
+            "— this may take a moment on first run …"
+        )
         model: Any = my_model()
 
     except Exception as exc:

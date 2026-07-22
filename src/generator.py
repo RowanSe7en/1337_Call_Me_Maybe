@@ -2,9 +2,8 @@
 
 import json
 import math
-from typing import Any, Optional
-
 import numpy as np
+from typing import Any, Optional
 from pydantic import BaseModel, PrivateAttr, field_validator
 
 _NUM_CHARS: frozenset[str] = frozenset("0123456789.+-eE")
@@ -26,6 +25,7 @@ class FunctionCallGenerator(BaseModel):
     _terminator_ids: list[int] = PrivateAttr(default_factory=list)
     _input_ids: list[int] = PrivateAttr(default_factory=list)
     _selected_fn: Optional[dict[str, Any]] = PrivateAttr(default=None)
+    _eos_token_id: int = PrivateAttr(default=0)
 
     @field_validator("functions")
     @classmethod
@@ -65,6 +65,29 @@ class FunctionCallGenerator(BaseModel):
             for tid, dec in self._id_to_decoded.items()
             if dec.strip() in _TERMINATORS
         ]
+
+        if hasattr(self.model, "get_eos_token_id"):
+            self._eos_token_id = self.model.get_eos_token_id()
+        else:
+            self._eos_token_id = self._infer_eos_token_id()
+
+    def _infer_eos_token_id(self) -> int:
+        """Best-effort EOS lookup for model wrappers that don't expose
+        get_eos_token_id() directly (e.g. a black-box SDK like Qwen's
+        llm_sdk). Checks the vocab we already loaded for conventional
+        end-of-sequence / end-of-turn token strings, in order of
+        preference.
+        """
+        candidates = ("<|endoftext|>", "<|im_end|>", "</s>", "<|eot_id|>")
+        for candidate in candidates:
+            if candidate in self._token_to_id:
+                return self._token_to_id[candidate]
+
+        print(
+            "[WARN] Could not infer EOS token id from vocab; "
+            "completion-detection on prefix-colliding names may misbehave.",
+        )
+        return 0
 
     def _encode(self, text: str) -> list[int]:
         """Encode text into a list of token IDs."""
