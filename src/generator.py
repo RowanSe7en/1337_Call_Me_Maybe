@@ -51,7 +51,7 @@ class FunctionCallGenerator(BaseModel):
         self._id_to_token = {v: k for k, v in self._token_to_id.items()}
 
         self._id_to_decoded = {
-            tid: self.model.decode([tid]) for tid in self._id_to_token
+            tid: self._decode([tid]) for tid in self._id_to_token
         }
 
         self._numeric_ids = [
@@ -94,6 +94,11 @@ class FunctionCallGenerator(BaseModel):
 
         result: list[int] = self.model.encode(text).tolist()[0]
         return result
+
+    def _decode(self, ids: list[int]) -> Any:
+        """Decode a list of token IDs into text."""
+
+        return self.model.decode(ids)
 
     def _get_logits(self) -> list[float]:
         """Get the model logits for the current input tokens."""

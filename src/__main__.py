@@ -55,7 +55,7 @@ def main() -> None:
             "SmolLM2": SmolLM2Backend,
         }
 
-        my_model: Callable[[], Any] = models["SmQwenolLM2"]
+        my_model: Callable[[], Any] = models["Qwen"]
         print(
             f"Loading model {str(my_model.__name__)} "
             "— this may take a moment on first run …"
