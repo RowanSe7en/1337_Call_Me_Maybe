@@ -112,11 +112,6 @@ class FunctionCallGenerator(BaseModel):
         )
         return result
 
-    def _force(self, text: str) -> None:
-        """Append encoded text tokens to the current input."""
-
-        self._input_ids.extend(self._encode(text))
-
     def _constrained_decoding(
         self, allowed_ids: list[int]
     ) -> tuple[int, str]:
@@ -250,7 +245,7 @@ class FunctionCallGenerator(BaseModel):
     def _generate_string(self) -> str:
         """Generate a string value using constrained token decoding."""
 
-        self._force('"')
+        self._input_ids.extend(self._encode('"'))
 
         value_parts: list[str] = []
         first_token: bool = True
@@ -267,15 +262,15 @@ class FunctionCallGenerator(BaseModel):
             if '"' in tok_decoded:
                 before = tok_decoded.split('"')[0]
                 if before:
-                    self._force(before)
+                    self._input_ids.extend(self._encode(before))
                     value_parts.append(before)
-                self._force('"')
+                self._input_ids.extend(self._encode('"'))
                 return "".join(value_parts)
 
             self._input_ids.append(chosen_id)
             value_parts.append(tok_decoded)
 
-        self._force('"')
+        self._input_ids.extend(self._encode('"'))
 
         return "".join(value_parts)
 
@@ -299,10 +294,10 @@ class FunctionCallGenerator(BaseModel):
         )
 
         if true_score >= false_score:
-            self._force("true")
+            self._input_ids.extend(self._encode("true"))
             return True
         else:
-            self._force("false")
+            self._input_ids.extend(self._encode("false"))
             return False
 
     def generate(self) -> dict[str, Any]:
@@ -327,11 +322,9 @@ class FunctionCallGenerator(BaseModel):
         self._input_ids = self._encode(instruction)
         self._selected_fn = None
 
-        self._force('{"prompt":"')
-
+        self._input_ids.extend(self._encode('{"prompt":"'))
         self._input_ids.extend(self._encode(self.prompt))
-
-        self._force('","name":"')
+        self._input_ids.extend(self._encode('","name":"'))
 
         self._generate_name()
 
@@ -340,7 +333,7 @@ class FunctionCallGenerator(BaseModel):
                 "No function was selected during name generation."
             )
 
-        self._force('","parameters":{')
+        self._input_ids.extend(self._encode('","parameters":{'))
 
         params: dict[str, Any] = self._selected_fn.get("parameters", {})
         parameters: dict[str, Any] = {}
@@ -366,9 +359,9 @@ class FunctionCallGenerator(BaseModel):
                 parameters[pname] = val
 
             if not is_last:
-                self._force(",")
+                self._input_ids.extend(self._encode(","))
 
-        self._force("}}")
+        self._input_ids.extend(self._encode("}}"))
 
         return {
             "prompt": self.prompt,

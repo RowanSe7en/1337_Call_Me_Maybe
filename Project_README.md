@@ -185,6 +185,9 @@ all of the generator's internal bookkeeping lives in private attributes
   building a number, and tokens that legally end one (`,` or `}`).
 - `_input_ids`: the running list of token IDs fed to the model so far.
 - `_selected_fn`: the function definition chosen for the current prompt.
+- `_eos_token_id`: the model's end-of-sequence token ID, used to disambiguate
+  function names where one name is a prefix of another during
+  `_generate_name()`.
 
 **`initialize()`** — called once, lazily, the first time `generate()` runs —
 does the expensive setup:
@@ -202,15 +205,22 @@ does the expensive setup:
    `0123456789.+-eE`) and `_terminator_ids` (tokens that decode to `,` or
    `}`). Doing this scan once at startup, instead of on every single
    generated digit, is what keeps number generation fast.
+5. It sets `_eos_token_id`: if the model wrapper exposes
+   `get_eos_token_id()` directly, that value is used; otherwise
+   `_infer_eos_token_id()` falls back to scanning the already-loaded vocab
+   for conventional end-of-sequence / end-of-turn token strings (in order:
+   `<|endoftext|>`, `<|im_end|>`, `</s>`, `<|eot_id|>`), printing a warning
+   and defaulting to `0` if none are found.
 
 ### 5. The generation pipeline (`generate()`)
 
 `generate()` builds the initial instruction prompt (the list of available
 function names + descriptions, plus the user's request), encodes it into
 `_input_ids`, and then **forces** a fixed JSON skeleton around the model's
-free-form choices using `_force(text)` — which just encodes `text` and
-appends the resulting token IDs directly to `_input_ids`, no sampling
-involved:
+free-form choices. There's no single forcing helper — each literal piece of
+scaffolding is pushed onto `_input_ids` inline with
+`self._input_ids.extend(self._encode(text))`, which just encodes `text` and
+appends the resulting token IDs directly, no sampling involved:
 
 ```
 {"prompt":"<original prompt>","name":"   <-- forced
@@ -226,13 +236,20 @@ into an `active` dict (`name -> token id sequence`). At each position:
 
 - It keeps only the token IDs that are the *next* token for some
   still-alive candidate name (this is the `allowed` set).
+- If any candidate's full token sequence has already been emitted at the
+  current position (`completed`), `_eos_token_id` is added to `allowed` too,
+  so the model can choose to stop there instead of being forced to keep
+  extending into a longer candidate name that happens to share the same
+  prefix.
 - It calls `_constrained_decoding(allowed)`, which fetches the raw logits via
   `model.get_logits_from_input_ids(self._input_ids)`, sets every logit
   **not** in `allowed` to `-inf`, and takes the `argmax` of what's left —
   so the model can only physically emit a token that keeps at least one
-  candidate function name alive.
-- Whichever names no longer match the chosen token are dropped from
-  `active`.
+  candidate function name alive (or the EOS token, once a candidate is
+  already complete).
+- If the chosen token is `_eos_token_id` while a candidate is already
+  complete, that candidate is resolved immediately. Otherwise, whichever
+  names no longer match the chosen token are dropped from `active`.
 - Once exactly one candidate remains and its full token sequence has been
   emitted, `_resolve(name)` looks it up in `self.functions` and stores it in
   `_selected_fn`.
@@ -291,10 +308,10 @@ schema, no matter how weak the underlying model's raw predictions are.
 
 The literal, unavoidable parts of the JSON scaffolding (`{"prompt":"`,
 `","name":"`, `","parameters":{`, the commas between parameters, the closing
-`"}}"`) are never left to the model at all — they're injected directly via
-`_force()`. The model is only asked to make the decisions that actually
-require intelligence: which function fits the prompt, and what values its
-arguments should take.
+`"}}"`) are never left to the model at all — they're injected directly with
+inline `self._input_ids.extend(self._encode(text))` calls. The model is only
+asked to make the decisions that actually require intelligence: which
+function fits the prompt, and what values its arguments should take.
 
 ## Design decisions
 
