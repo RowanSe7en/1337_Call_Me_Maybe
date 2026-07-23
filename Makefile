@@ -48,12 +48,11 @@ debug:
 
 clean:
 	@echo "Removing temporary files and caches..."
-	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name "__pycache__" -exec rm -rf {} +
 	@rm -rf \
 	.mypy_cache \
 	src/.mypy_cache \
 	llm_sdk/.mypy_cache \
-	.ruff_cache
 
 fclean_goinfre: clean
 	@echo "Removing the 'goinfre' project directory..."
@@ -83,13 +82,13 @@ lint:
 	--check-untyped-defs
 
 .PHONY: \
-	install \
-	setup_goinfre \
+	re \
 	run \
+	lint \
 	debug \
 	clean \
 	fclean \
-	fclean_goinfre \
-	re \
+	install \
 	re_goinfre \
-	lint \
+	setup_goinfre \
+	fclean_goinfre \
