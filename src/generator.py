@@ -28,7 +28,6 @@ class FunctionCallGenerator(BaseModel):
     _eos_token_id: int = PrivateAttr(default=0)
 
     @field_validator("functions")
-    @classmethod
     def functions_not_empty(
         cls,
         v: list[dict[str, Any]],
@@ -43,7 +42,7 @@ class FunctionCallGenerator(BaseModel):
         """Load vocabulary data and prepare token lookup tables."""
 
         try:
-            with open(self.model.get_path_to_vocab_file(), "r") as fh:
+            with open(self._get_vocab_file(), "r") as fh:
                 self._token_to_id = json.load(fh)
         except (FileNotFoundError, json.JSONDecodeError) as exc:
             raise RuntimeError(f"Could not load model vocabulary: {exc}")
@@ -70,6 +69,11 @@ class FunctionCallGenerator(BaseModel):
             self._eos_token_id = self.model.get_eos_token_id()
         else:
             self._eos_token_id = self._infer_eos_token_id()
+
+    def _get_vocab_file(self) -> Any:
+        """Return the path to the model vocabulary file."""
+
+        return self.model.get_path_to_vocab_file()
 
     def _infer_eos_token_id(self) -> int:
         """Best-effort EOS lookup for model wrappers that don't expose
@@ -113,7 +117,7 @@ class FunctionCallGenerator(BaseModel):
 
         self._input_ids.extend(self._encode(text))
 
-    def _sample_constrained(
+    def _constrained_decoding(
         self, allowed_ids: list[int]
     ) -> tuple[int, str]:
         """Select the highest-scoring token from allowed token IDs."""
@@ -163,7 +167,7 @@ class FunctionCallGenerator(BaseModel):
                     f"no reachable tokens among {list(active.keys())}"
                 )
 
-            chosen_id, _ = self._sample_constrained(allowed)
+            chosen_id, _ = self._constrained_decoding(allowed)
 
             if completed and chosen_id == self._eos_token_id:
                 self._resolve(completed[0])
@@ -215,10 +219,10 @@ class FunctionCallGenerator(BaseModel):
 
             if not allowed:
                 raise RuntimeError(
-                    f"Number generation stuck after emitting: {current!r}"
+                    f"Number generation stuck after emitting: {current}"
                 )
 
-            chosen_id, tok_str = self._sample_constrained(allowed)
+            chosen_id, tok_str = self._constrained_decoding(allowed)
 
             stripped_tok = tok_str.strip()
 

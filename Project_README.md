@@ -226,7 +226,7 @@ into an `active` dict (`name -> token id sequence`). At each position:
 
 - It keeps only the token IDs that are the *next* token for some
   still-alive candidate name (this is the `allowed` set).
-- It calls `_sample_constrained(allowed)`, which fetches the raw logits via
+- It calls `_constrained_decoding(allowed)`, which fetches the raw logits via
   `model.get_logits_from_input_ids(self._input_ids)`, sets every logit
   **not** in `allowed` to `-inf`, and takes the `argmax` of what's left —
   so the model can only physically emit a token that keeps at least one
@@ -283,7 +283,7 @@ Normally you'd soften-max these and sample, or just take the argmax. Here,
 before that happens, an `allowed_ids` set is computed from the current
 generation state (which function names are still possible, which characters
 can legally extend the number being built, etc.), every logit **not** in
-that set is forced to `-inf` in `_sample_constrained()`, and only then is the
+that set is forced to `-inf` in `_constrained_decoding()`, and only then is the
 argmax taken. Because the impossible tokens are removed from the
 distribution entirely rather than merely discouraged, the output is
 guaranteed — not just likely — to be valid JSON that matches the function

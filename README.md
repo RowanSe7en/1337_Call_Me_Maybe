@@ -262,7 +262,7 @@ into an `active` dict (`name -> token id sequence`). At each position:
 
 - It keeps only the token IDs that are the *next* token for some
   still-alive candidate name (this is the `allowed` set).
-- It calls `_sample_constrained(allowed)`, which fetches the raw logits via
+- It calls `_constrained_decoding(allowed)`, which fetches the raw logits via
   `model.get_logits_from_input_ids(self._input_ids)`, sets every logit
   **not** in `allowed` to `-inf`, and takes the `argmax` of what's left —
   so the model can only physically emit a token that keeps at least one
@@ -319,7 +319,7 @@ Normally you'd soften-max these and sample, or just take the argmax. Here,
 before that happens, an `allowed_ids` set is computed from the current
 generation state (which function names are still possible, which characters
 can legally extend the number being built, etc.), every logit **not** in
-that set is forced to `-inf` in `_sample_constrained()`, and only then is the
+that set is forced to `-inf` in `_constrained_decoding()`, and only then is the
 argmax taken. Because the impossible tokens are removed from the
 distribution entirely rather than merely discouraged, the output is
 guaranteed — not just likely — to be valid JSON that matches the function
@@ -502,6 +502,86 @@ The project includes several bonus features and improvements beyond the core req
   The project demonstrates how text is converted into token IDs, how token IDs are used to obtain model logits, and how constrained decoding uses those logits to select only valid tokens before reconstructing the final function call.
 
 These additions make the project more modular, extensible, and easier to debug while demonstrating a deeper understanding of tokenization, model inference, and constrained decoding.
+
+## Checking Your Implementation with Moulinette
+
+You can use the provided **Moulinette** to generate a private test set, run your implementation against it, and automatically grade the generated function calls.
+
+### 1. Install Dependencies
+
+From the project root, synchronize the project dependencies:
+
+```bash
+make install
+```
+
+### 2. Generate the Private Exercise Set
+
+Navigate to the `moulinette` directory:
+
+```bash
+cd moulinette
+```
+
+Generate the private exercise files:
+
+```bash
+uv run python -m moulinette prepare_exercises --set private
+```
+
+This generates the required test and correction files inside the `moulinette/data` directory:
+
+```text
+moulinette/data/
+├── input/
+│   ├── functions_definition.json
+│   └── function_calling_tests.json
+└── correction/
+    └── function_calling_corrections.json
+```
+
+### 3. Run Your Implementation
+
+Return to the project root:
+
+```bash
+cd ..
+```
+
+Run the project using the generated private test set:
+
+```bash
+uv run python -m src \
+    --input moulinette/data/input/function_calling_tests.json \
+    --functions_definition moulinette/data/input/functions_definition.json \
+    --output data/output/function_calls.json
+```
+
+The generated function calls will be saved to:
+
+```text
+data/output/function_calls.json
+```
+
+### 4. Grade Your Results
+
+Navigate back to the `moulinette` directory:
+
+```bash
+cd moulinette
+```
+
+Run the private test grader:
+
+```bash
+uv run python -m moulinette grade_student_answers \
+    --set private \
+    --student_answer_path ../data/output/function_calls.json
+```
+
+The Moulinette will run the generated answers against the **private test set** and report whether each function call is valid.
+
+> **Note:** The private test set is generated locally by the Moulinette. Make sure to run `prepare_exercises` before grading if the required private exercise files have not yet been generated.
 
 ## Resources
 

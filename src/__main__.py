@@ -72,6 +72,7 @@ def main() -> None:
     total_time: float = 0.0
 
     for prompt in data.prompts:
+
         t_start = time.perf_counter()
 
         try:
