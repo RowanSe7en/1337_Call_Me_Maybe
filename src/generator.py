@@ -9,6 +9,7 @@ from pydantic import BaseModel, PrivateAttr, field_validator
 _NUM_CHARS: frozenset[str] = frozenset("0123456789.+-eE")
 _TERMINATORS: frozenset[str] = frozenset({",", "}"})
 _MAX_TOKENS: int = 128
+_MAX_NUMBER: int = 10000000000
 
 
 class FunctionCallGenerator(BaseModel):
@@ -347,10 +348,16 @@ class FunctionCallGenerator(BaseModel):
 
             if ptype in ("number", "float"):
                 val: Any = self._generate_number(as_float=True)
-                parameters[pname] = val
+                if abs(val) > _MAX_NUMBER:
+                    parameters[pname] = "large number"
+                else:
+                    parameters[pname] = val
             elif ptype == "integer":
                 val = int(self._generate_number(as_float=False))
-                parameters[pname] = val
+                if abs(val) > _MAX_NUMBER:
+                    parameters[pname] = "large number"
+                else:
+                    parameters[pname] = val
             elif ptype == "boolean":
                 val = self._generate_boolean()
                 parameters[pname] = val

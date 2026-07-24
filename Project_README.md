@@ -484,6 +484,86 @@ The project includes several bonus features and improvements beyond the core req
 
 These additions make the project more modular, extensible, and easier to debug while demonstrating a deeper understanding of tokenization, model inference, and constrained decoding.
 
+## Checking Your Implementation with Moulinette
+
+You can use the provided **Moulinette** to generate a private test set, run your implementation against it, and automatically grade the generated function calls.
+
+### 1. Install Dependencies
+
+From the project root, synchronize the project dependencies:
+
+```bash
+make install
+```
+
+### 2. Generate the Private Exercise Set
+
+Navigate to the `moulinette` directory:
+
+```bash
+cd moulinette
+```
+
+Generate the private exercise files:
+
+```bash
+uv run python -m moulinette prepare_exercises --set private
+```
+
+This generates the required test and correction files inside the `moulinette/data` directory:
+
+```text
+moulinette/data/
+├── input/
+│   ├── functions_definition.json
+│   └── function_calling_tests.json
+└── correction/
+    └── function_calling_corrections.json
+```
+
+### 3. Run Your Implementation
+
+Return to the project root:
+
+```bash
+cd ..
+```
+
+Run the project using the generated private test set:
+
+```bash
+uv run python -m src \
+    --input moulinette/data/input/function_calling_tests.json \
+    --functions_definition moulinette/data/input/functions_definition.json \
+    --output data/output/function_calls.json
+```
+
+The generated function calls will be saved to:
+
+```text
+data/output/function_calls.json
+```
+
+### 4. Grade Your Results
+
+Navigate back to the `moulinette` directory:
+
+```bash
+cd moulinette
+```
+
+Run the private test grader:
+
+```bash
+uv run python -m moulinette grade_student_answers \
+    --set private \
+    --student_answer_path ../data/output/function_calls.json
+```
+
+The Moulinette will run the generated answers against the **private test set** and report whether each function call is valid.
+
+> **Note:** The private test set is generated locally by the Moulinette. Make sure to run `prepare_exercises` before grading if the required private exercise files have not yet been generated.
+
 ## Resources
 
 - [Hugging Face — Text generation strategies](https://huggingface.co/docs/transformers/generation_strategies)
