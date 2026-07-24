@@ -243,7 +243,7 @@ does the expensive setup:
    generated digit, is what keeps number generation fast.
 5. It sets `_eos_token_id`: if the model wrapper exposes
    `get_eos_token_id()` directly, that value is used; otherwise
-   `_infer_eos_token_id()` falls back to scanning the already-loaded vocab
+   `_get_eos_token_id()` falls back to scanning the already-loaded vocab
    for conventional end-of-sequence / end-of-turn token strings (in order:
    `<|endoftext|>`, `<|im_end|>`, `</s>`, `<|eot_id|>`), printing a warning
    and defaulting to `0` if none are found.

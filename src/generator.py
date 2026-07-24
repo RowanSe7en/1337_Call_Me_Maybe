@@ -68,24 +68,24 @@ class FunctionCallGenerator(BaseModel):
         if hasattr(self.model, "get_eos_token_id"):
             self._eos_token_id = self.model.get_eos_token_id()
         else:
-            self._eos_token_id = self._infer_eos_token_id()
+            self._eos_token_id = self._get_eos_token_id()
 
     def _get_vocab_file(self) -> Any:
         """Return the path to the model vocabulary file."""
 
         return self.model.get_path_to_vocab_file()
 
-    def _infer_eos_token_id(self) -> int:
+    def _get_eos_token_id(self) -> int:
         """Best-effort EOS lookup for model wrappers that don't expose
         get_eos_token_id() directly (e.g. a black-box SDK like Qwen's
         llm_sdk). Checks the vocab we already loaded for conventional
         end-of-sequence / end-of-turn token strings, in order of
         preference.
         """
-        candidates = ("<|endoftext|>", "<|im_end|>", "</s>", "<|eot_id|>")
-        for candidate in candidates:
-            if candidate in self._token_to_id:
-                return self._token_to_id[candidate]
+        eos_tokens = ("<|endoftext|>", "<|im_end|>", "</s>", "<|eot_id|>")
+        for eos_token in eos_tokens:
+            if eos_token in self._token_to_id:
+                return self._token_to_id[eos_token]
 
         print(
             "[WARN] Could not infer EOS token id from vocab; "
@@ -154,7 +154,7 @@ class FunctionCallGenerator(BaseModel):
             ]
 
             if completed:
-                allowed = allowed + [self._eos_token_id]
+                allowed.extend([self._eos_token_id])
 
             if not allowed:
                 raise RuntimeError(
